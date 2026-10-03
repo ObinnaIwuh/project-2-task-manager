@@ -1,0 +1,69 @@
+services:
+
+  database:
+    image: postgres:18-alpine
+    container_name: task-manager-database
+
+    environment:
+      POSTGRES_DB: task_manager
+      POSTGRES_USER: taskapp
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskapp -d task_manager"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - task-manager-network
+
+
+  backend:
+    image: task-manager-backend:latest
+    container_name: task-manager-backend
+
+    environment:
+      PORT: 5000
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: task_manager
+      DB_USER: taskapp
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    depends_on:
+      database:
+        condition: service_healthy
+
+    ports:
+      - "5000:5000"
+
+    networks:
+      - task-manager-network
+
+
+  frontend:
+    image: task-manager-frontend:latest
+    container_name: task-manager-frontend
+
+    depends_on:
+      - backend
+
+    ports:
+      - "8080:80"
+
+    networks:
+      - task-manager-network
+
+
+volumes:
+  postgres_data:
+
+
+networks:
+  task-manager-network:
+    driver: bridge
