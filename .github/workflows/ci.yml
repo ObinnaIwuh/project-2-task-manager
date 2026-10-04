@@ -9,9 +9,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
-    name: Build Application
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
@@ -35,8 +39,27 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Build backend Docker image
-        run: docker build -t task-manager-backend:ci ./backend
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build frontend Docker image
-        run: docker build -t task-manager-frontend:ci ./frontend
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/obinnaiwuh/task-manager-backend:latest
+            ghcr.io/obinnaiwuh/task-manager-backend:${{ github.sha }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/obinnaiwuh/task-manager-frontend:latest
+            ghcr.io/obinnaiwuh/task-manager-frontend:${{ github.sha }}
