@@ -1,4 +1,4 @@
-name: Task Manager CI
+name: Task Manager CI/CD
 
 on:
   push:
@@ -14,11 +14,13 @@ permissions:
   packages: write
 
 jobs:
+
   build:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -63,3 +65,38 @@ jobs:
           tags: |
             ghcr.io/obinnaiwuh/task-manager-frontend:latest
             ghcr.io/obinnaiwuh/task-manager-frontend:${{ github.sha }}
+
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+
+          script: |
+            cd ~/task-manager
+
+            echo "Pulling latest Docker images..."
+            docker compose pull
+
+            echo "Starting updated containers..."
+            docker compose up -d
+
+            echo "Waiting for services..."
+            sleep 10
+
+            echo "Checking container status..."
+            docker compose ps
+
+            echo "Checking application health..."
+            curl --fail http://localhost:8080/api/health
+
+            echo "Deployment successful!"
