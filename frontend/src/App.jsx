@@ -93,7 +93,7 @@ function App() {
     <div className="app">
       <header className="header">
         <div>
-          <h1>Task Manager</h1>
+          <h1>Task Manager — DevOps Project 2</h1>
           <p>Manage your tasks efficiently.</p>
         </div>
       </header>
