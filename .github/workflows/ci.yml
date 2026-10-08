@@ -84,7 +84,11 @@ jobs:
           script: |
             cd ~/task-manager
 
-            echo "Pulling latest Docker images..."
+            export IMAGE_TAG=${{ github.sha }}
+
+            echo "Deploying version: $IMAGE_TAG"
+
+            echo "Pulling Docker images..."
             docker compose pull
 
             echo "Starting updated containers..."
@@ -100,3 +104,4 @@ jobs:
             curl --fail http://localhost:8080/api/health
 
             echo "Deployment successful!"
+            echo "Running version: $IMAGE_TAG"
